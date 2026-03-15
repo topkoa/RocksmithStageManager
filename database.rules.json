@@ -1,0 +1,29 @@
+{
+  "rules": {
+    "sessions": {
+      "$sessionId": {
+        ".read": "auth != null",
+        "info": {
+          ".write": "auth != null"
+        },
+        "library": {
+          ".write": "auth != null && data.parent().child('info/hostId').val() === auth.uid"
+        },
+        "queue": {
+          ".write": "auth != null"
+        },
+        "nowPlaying": {
+          ".write": "auth != null && data.parent().child('info/hostId').val() === auth.uid"
+        },
+        "history": {
+          ".write": "auth != null && data.parent().child('info/hostId').val() === auth.uid"
+        },
+        "players": {
+          "$playerId": {
+            ".write": "auth != null && $playerId === auth.uid"
+          }
+        }
+      }
+    }
+  }
+}
