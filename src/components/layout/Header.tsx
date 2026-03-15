@@ -28,6 +28,7 @@ export function Header({
       <div className="flex items-center gap-3">
         <h1 className="text-lg font-bold text-white tracking-tight">
           <span className="text-orange-500">RS</span> Stage Manager
+          <span className="text-[10px] font-normal text-slate-600 ml-1.5 align-middle">v{__APP_VERSION__}</span>
         </h1>
         {roomCode && (
           <SessionInfo roomCode={roomCode} players={players} />
