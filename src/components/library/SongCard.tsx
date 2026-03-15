@@ -1,6 +1,5 @@
 import type { Song } from '../../types/song';
 import { formatDuration, formatTuning } from '../../utils/formatting';
-import { Button } from '../common/Button';
 
 interface SongCardProps {
   song: Song;
@@ -28,7 +27,11 @@ export function SongCard({ song, onAddToQueue }: SongCardProps) {
   );
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-3 hover:border-slate-600 transition-colors group">
+    <button
+      type="button"
+      onClick={() => onAddToQueue(song)}
+      className="w-full text-left bg-slate-800/50 border border-slate-700/50 rounded-lg p-3 hover:border-orange-500/50 hover:bg-slate-800 active:bg-slate-700/50 transition-colors cursor-pointer"
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-white truncate">
@@ -39,14 +42,7 @@ export function SongCard({ song, onAddToQueue }: SongCardProps) {
             {song.albumName && ` \u2014 ${song.albumName}`}
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onAddToQueue(song)}
-          className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0 !px-2 !py-1 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
-        >
-          + Queue
-        </Button>
+        <span className="text-xs text-orange-400 shrink-0 mt-0.5">+ Queue</span>
       </div>
 
       <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -89,6 +85,6 @@ export function SongCard({ song, onAddToQueue }: SongCardProps) {
           <span className="text-[10px] text-slate-500">{song.songYear}</span>
         )}
       </div>
-    </div>
+    </button>
   );
 }
