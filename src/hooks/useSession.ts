@@ -26,6 +26,35 @@ interface SessionState {
   history: QueueItem[];
 }
 
+const SESSION_STORAGE_KEY = 'rs-stage-session';
+
+interface SavedSession {
+  session: Session;
+  role: AppRole;
+  playerId: string;
+  playerName: string;
+}
+
+function saveSession(data: SavedSession) {
+  try {
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data));
+  } catch { /* ignore */ }
+}
+
+function loadSavedSession(): SavedSession | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as SavedSession;
+  } catch {
+    return null;
+  }
+}
+
+function clearSavedSession() {
+  sessionStorage.removeItem(SESSION_STORAGE_KEY);
+}
+
 export function useSession() {
   const [state, setState] = useState<SessionState>({
     session: null,
@@ -42,6 +71,7 @@ export function useSession() {
   });
 
   const unsubscribesRef = useRef<Array<() => void>>([]);
+  const restoredRef = useRef(false);
 
   const setupSubscriptions = useCallback((sessionId: string) => {
     // Clean up previous subscriptions
@@ -73,10 +103,88 @@ export function useSession() {
     );
   }, []);
 
+  // Restore session on mount
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+
+    const saved = loadSavedSession();
+    if (!saved || !isFirebaseConfigured()) return;
+    if (saved.session.id === 'offline') {
+      // Restore offline mode
+      setState(prev => ({
+        ...prev,
+        session: saved.session,
+        role: saved.role,
+        playerId: saved.playerId,
+        playerName: saved.playerName,
+      }));
+      return;
+    }
+
+    // Reconnect to Firebase session
+    setState(prev => ({
+      ...prev,
+      connecting: true,
+    }));
+
+    // Re-join the session (re-registers the player)
+    const reconnect = async () => {
+      try {
+        if (saved.role === 'host') {
+          // Host just needs to re-auth and subscribe
+          const { ensureAuthenticated } = await import('../firebase/config');
+          await ensureAuthenticated();
+          setState(prev => ({
+            ...prev,
+            session: saved.session,
+            role: saved.role,
+            playerId: saved.playerId,
+            playerName: saved.playerName,
+            connecting: false,
+          }));
+          setupSubscriptions(saved.session.id);
+        } else {
+          // Player re-joins
+          const { session, playerId } = await joinSession(
+            saved.session.roomCode,
+            saved.playerName
+          );
+          setState(prev => ({
+            ...prev,
+            session,
+            role: 'player',
+            playerId,
+            playerName: saved.playerName,
+            connecting: false,
+          }));
+          setupSubscriptions(session.id);
+        }
+      } catch {
+        // Session expired or gone — clear and show landing
+        clearSavedSession();
+        setState(prev => ({
+          ...prev,
+          connecting: false,
+          role: 'none',
+        }));
+      }
+    };
+
+    reconnect();
+  }, [setupSubscriptions]);
+
   const handleCreateSession = useCallback(async () => {
     setState(prev => ({ ...prev, connecting: true, error: null }));
     try {
       const { session, playerId } = await createSession();
+      const savedData: SavedSession = {
+        session,
+        role: 'host',
+        playerId,
+        playerName: 'Host',
+      };
+      saveSession(savedData);
       setState(prev => ({
         ...prev,
         session,
@@ -99,6 +207,13 @@ export function useSession() {
     setState(prev => ({ ...prev, connecting: true, error: null }));
     try {
       const { session, playerId } = await joinSession(roomCode, playerName);
+      const savedData: SavedSession = {
+        session,
+        role: 'player',
+        playerId,
+        playerName,
+      };
+      saveSession(savedData);
       setState(prev => ({
         ...prev,
         session,
@@ -108,13 +223,6 @@ export function useSession() {
         connecting: false,
       }));
       setupSubscriptions(session.id);
-
-      // Subscribe to library for player devices
-      unsubscribesRef.current.push(
-        subscribeToLibrary(session.id, (_songs) => {
-          // This callback is used by the parent component via onLibrarySync
-        })
-      );
     } catch (err) {
       setState(prev => ({
         ...prev,
@@ -144,17 +252,24 @@ export function useSession() {
   );
 
   const startOfflineMode = useCallback(() => {
+    const session: Session = {
+      id: 'offline',
+      roomCode: 'OFFLINE',
+      hostId: 'local',
+      createdAt: Date.now(),
+      status: 'active',
+    };
+    saveSession({
+      session,
+      role: 'host',
+      playerId: 'local',
+      playerName: 'Host',
+    });
     setState(prev => ({
       ...prev,
       role: 'host',
       playerName: 'Host',
-      session: {
-        id: 'offline',
-        roomCode: 'OFFLINE',
-        hostId: 'local',
-        createdAt: Date.now(),
-        status: 'active',
-      },
+      session,
     }));
   }, []);
 

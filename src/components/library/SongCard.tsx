@@ -43,7 +43,7 @@ export function SongCard({ song, onAddToQueue }: SongCardProps) {
           variant="ghost"
           size="sm"
           onClick={() => onAddToQueue(song)}
-          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 !px-2 !py-1 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
+          className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0 !px-2 !py-1 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
         >
           + Queue
         </Button>
