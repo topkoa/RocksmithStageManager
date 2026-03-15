@@ -11,6 +11,9 @@ interface HeaderProps {
   onLoadFiles: () => void;
   onClearLibrary: () => void;
   progress?: { completed: number; total: number; current: string };
+  playerName?: string;
+  preferredPath?: string;
+  onEditProfile?: () => void;
 }
 
 export function Header({
@@ -22,6 +25,9 @@ export function Header({
   onLoadFiles,
   onClearLibrary,
   progress,
+  playerName,
+  preferredPath,
+  onEditProfile,
 }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
@@ -32,6 +38,15 @@ export function Header({
         </h1>
         {roomCode && (
           <SessionInfo roomCode={roomCode} players={players} />
+        )}
+        {playerName && onEditProfile && (
+          <button
+            onClick={onEditProfile}
+            className="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 hover:border-orange-500/50 transition-colors"
+          >
+            <span className="text-xs text-white">{playerName}</span>
+            <span className="text-[10px] text-orange-400">{preferredPath}</span>
+          </button>
         )}
       </div>
 

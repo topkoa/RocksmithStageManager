@@ -16,6 +16,7 @@ interface SessionState {
   role: AppRole;
   playerId: string;
   playerName: string;
+  preferredPath: string;
   players: Player[];
   firebaseConfigured: boolean;
   error: string | null;
@@ -33,6 +34,7 @@ interface SavedSession {
   role: AppRole;
   playerId: string;
   playerName: string;
+  preferredPath: string;
 }
 
 function saveSession(data: SavedSession) {
@@ -61,6 +63,7 @@ export function useSession() {
     role: 'none',
     playerId: '',
     playerName: '',
+    preferredPath: 'Lead',
     players: [],
     firebaseConfigured: isFirebaseConfigured(),
     error: null,
@@ -118,6 +121,7 @@ export function useSession() {
         role: saved.role,
         playerId: saved.playerId,
         playerName: saved.playerName,
+        preferredPath: saved.preferredPath || 'Lead',
       }));
       return;
     }
@@ -149,6 +153,7 @@ export function useSession() {
             role: saved.role,
             playerId: saved.playerId,
             playerName: saved.playerName,
+            preferredPath: saved.preferredPath || 'Lead',
             connecting: false,
           }));
           setupSubscriptions(saved.session.id);
@@ -164,6 +169,7 @@ export function useSession() {
             role: 'player',
             playerId,
             playerName: saved.playerName,
+            preferredPath: saved.preferredPath || 'Lead',
             connecting: false,
           }));
           setupSubscriptions(session.id);
@@ -182,15 +188,18 @@ export function useSession() {
     reconnect();
   }, [setupSubscriptions]);
 
-  const handleCreateSession = useCallback(async () => {
+  const handleCreateSession = useCallback(async (hostName?: string, hostPath?: string) => {
     setState(prev => ({ ...prev, connecting: true, error: null }));
     try {
       const { session, playerId } = await createSession();
+      const name = hostName || 'Host';
+      const path = hostPath || 'Lead';
       const savedData: SavedSession = {
         session,
         role: 'host',
         playerId,
-        playerName: 'Host',
+        playerName: name,
+        preferredPath: path,
       };
       saveSession(savedData);
       setState(prev => ({
@@ -198,7 +207,8 @@ export function useSession() {
         session,
         role: 'host',
         playerId,
-        playerName: 'Host',
+        playerName: name,
+        preferredPath: path,
         connecting: false,
       }));
       setupSubscriptions(session.id);
@@ -211,15 +221,17 @@ export function useSession() {
     }
   }, [setupSubscriptions]);
 
-  const handleJoinSession = useCallback(async (roomCode: string, playerName: string) => {
+  const handleJoinSession = useCallback(async (roomCode: string, playerName: string, preferredPath?: string) => {
     setState(prev => ({ ...prev, connecting: true, error: null }));
     try {
       const { session, playerId } = await joinSession(roomCode, playerName);
+      const path = preferredPath || 'Lead';
       const savedData: SavedSession = {
         session,
         role: 'player',
         playerId,
         playerName,
+        preferredPath: path,
       };
       saveSession(savedData);
       setState(prev => ({
@@ -228,6 +240,7 @@ export function useSession() {
         role: 'player',
         playerId,
         playerName,
+        preferredPath: path,
         connecting: false,
       }));
       setupSubscriptions(session.id);
@@ -272,13 +285,31 @@ export function useSession() {
       role: 'host',
       playerId: 'local',
       playerName: 'Host',
+      preferredPath: 'Lead',
     });
     setState(prev => ({
       ...prev,
       role: 'host',
       playerName: 'Host',
+      preferredPath: 'Lead',
       session,
     }));
+  }, []);
+
+  const updateProfile = useCallback((playerName: string, preferredPath: string) => {
+    setState(prev => {
+      const updated = { ...prev, playerName, preferredPath };
+      if (prev.session) {
+        saveSession({
+          session: prev.session,
+          role: prev.role,
+          playerId: prev.playerId,
+          playerName,
+          preferredPath,
+        });
+      }
+      return updated;
+    });
   }, []);
 
   // Cleanup subscriptions on unmount
@@ -295,5 +326,6 @@ export function useSession() {
     uploadLibrary: handleUploadLibrary,
     subscribeToLibrarySync,
     startOfflineMode,
+    updateProfile,
   };
 }

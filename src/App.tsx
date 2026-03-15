@@ -13,6 +13,7 @@ import { NowPlaying } from './components/stage/NowPlaying';
 import { PlayHistory } from './components/stage/PlayHistory';
 import { CreateSession } from './components/session/CreateSession';
 import { JoinSession } from './components/session/JoinSession';
+import { EditProfileDialog } from './components/session/EditProfileDialog';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { isFirebaseConfigured } from './firebase/config';
 import {
@@ -40,6 +41,7 @@ function App() {
     }
   });
   const [activeTab, setActiveTab] = useState<'library' | 'queue'>('library');
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   const isOnline = session.session && session.session.id !== 'offline';
   const isHost = session.role === 'host';
@@ -199,6 +201,9 @@ function App() {
         onLoadFiles={fileLoader.loadFromDirectory}
         onClearLibrary={library.clearSongs}
         progress={fileLoader.progress}
+        playerName={session.playerName}
+        preferredPath={session.preferredPath}
+        onEditProfile={() => setEditProfileOpen(true)}
       />
 
       {fileLoader.loading && (
@@ -295,6 +300,7 @@ function App() {
         song={addToQueueSong}
         onConfirm={handleAddToQueue}
         defaultPlayerName={session.playerName !== 'Host' ? session.playerName : (recentPlayerNames[0] || '')}
+        defaultArrangement={session.preferredPath}
         recentPlayerNames={recentPlayerNames}
       />
 
@@ -319,9 +325,19 @@ function App() {
             setJoinQueueTarget(null);
           }}
           defaultPlayerName={session.playerName !== 'Host' ? session.playerName : (recentPlayerNames[0] || '')}
+          defaultArrangement={session.preferredPath}
           recentPlayerNames={recentPlayerNames}
         />
       )}
+
+      {/* Edit Profile Dialog */}
+      <EditProfileDialog
+        open={editProfileOpen}
+        onClose={() => setEditProfileOpen(false)}
+        playerName={session.playerName}
+        preferredPath={session.preferredPath}
+        onSave={session.updateProfile}
+      />
 
       {/* File loading errors */}
       {fileLoader.errors.length > 0 && (

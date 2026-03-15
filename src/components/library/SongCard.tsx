@@ -42,7 +42,6 @@ export function SongCard({ song, onAddToQueue }: SongCardProps) {
             {song.albumName && ` \u2014 ${song.albumName}`}
           </p>
         </div>
-        <span className="text-xs text-orange-400 shrink-0 mt-0.5">+ Queue</span>
       </div>
 
       <div className="flex items-center gap-2 mt-2 flex-wrap">

@@ -11,6 +11,7 @@ interface AddToQueueDialogProps {
   song: Song | null;
   onConfirm: (song: Song, player: PlayerSlot) => void;
   defaultPlayerName: string;
+  defaultArrangement?: string;
   recentPlayerNames: string[];
 }
 
@@ -20,6 +21,7 @@ export function AddToQueueDialog({
   song,
   onConfirm,
   defaultPlayerName,
+  defaultArrangement,
   recentPlayerNames,
 }: AddToQueueDialogProps) {
   const [playerName, setPlayerName] = useState(defaultPlayerName);
@@ -27,11 +29,19 @@ export function AddToQueueDialog({
 
   if (!song) return null;
 
+  const ALL_PATHS = ['Lead', 'Rhythm', 'Bass', 'Vocals'] as const;
   const mainArrangements = song.arrangements.filter(a => !a.isBonusArrangement);
+  const availableNames = new Set(mainArrangements.map(a => a.name));
+
+  const getEffectiveArrangement = () => {
+    if (selectedArrangement) return selectedArrangement;
+    if (defaultArrangement) return defaultArrangement;
+    return 'Lead';
+  };
 
   const handleConfirm = () => {
     if (!playerName.trim()) return;
-    const arrangement = selectedArrangement || mainArrangements[0]?.name || 'Lead';
+    const arrangement = getEffectiveArrangement();
     onConfirm(song, { playerName: playerName.trim(), arrangement });
     onClose();
     setSelectedArrangement('');
@@ -68,22 +78,30 @@ export function AddToQueueDialog({
         <div>
           <label className="block text-sm text-slate-400 mb-1">Arrangement</label>
           <div className="flex flex-wrap gap-2">
-            {mainArrangements.map(arr => (
-              <button
-                key={arr.name}
-                onClick={() => setSelectedArrangement(arr.name)}
-                className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-                  (selectedArrangement || mainArrangements[0]?.name) === arr.name
-                    ? 'bg-orange-600/30 border-orange-500 text-orange-300'
-                    : 'bg-slate-700 border-slate-600 text-slate-300 hover:border-slate-500'
-                }`}
-              >
-                <span>{arr.name}</span>
-                <span className="text-[10px] ml-1 text-slate-500">
-                  {formatTuning(arr.tuning)}
-                </span>
-              </button>
-            ))}
+            {ALL_PATHS.map(path => {
+              const arr = mainArrangements.find(a => a.name === path);
+              const isSelected = getEffectiveArrangement() === path;
+              return (
+                <button
+                  key={path}
+                  onClick={() => setSelectedArrangement(path)}
+                  className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                    isSelected
+                      ? 'bg-orange-600/30 border-orange-500 text-orange-300'
+                      : availableNames.has(path)
+                        ? 'bg-slate-700 border-slate-600 text-slate-300 hover:border-slate-500'
+                        : 'bg-slate-800 border-slate-700 text-slate-500 hover:border-slate-600'
+                  }`}
+                >
+                  <span>{path}</span>
+                  {arr && arr.tuning && (
+                    <span className="text-[10px] ml-1 text-slate-500">
+                      {formatTuning(arr.tuning)}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
