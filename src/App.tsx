@@ -137,6 +137,18 @@ function App() {
     }
   }, [isOnline, session.session, offlineQueue]);
 
+  // Show loading while reconnecting to a saved session
+  if (session.role === 'none' && session.connecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-slate-600 border-t-orange-500 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-400 text-sm">Reconnecting...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Landing page - choose role
   if (session.role === 'none') {
     return (

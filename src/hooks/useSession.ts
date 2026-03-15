@@ -128,13 +128,21 @@ export function useSession() {
       connecting: true,
     }));
 
-    // Re-join the session (re-registers the player)
+    // Re-join the session with a timeout so it doesn't hang
+    const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Reconnect timeout')), ms)
+        ),
+      ]);
+
     const reconnect = async () => {
       try {
         if (saved.role === 'host') {
           // Host just needs to re-auth and subscribe
           const { ensureAuthenticated } = await import('../firebase/config');
-          await ensureAuthenticated();
+          await withTimeout(ensureAuthenticated(), 8000);
           setState(prev => ({
             ...prev,
             session: saved.session,
@@ -146,9 +154,9 @@ export function useSession() {
           setupSubscriptions(saved.session.id);
         } else {
           // Player re-joins
-          const { session, playerId } = await joinSession(
-            saved.session.roomCode,
-            saved.playerName
+          const { session, playerId } = await withTimeout(
+            joinSession(saved.session.roomCode, saved.playerName),
+            8000
           );
           setState(prev => ({
             ...prev,
