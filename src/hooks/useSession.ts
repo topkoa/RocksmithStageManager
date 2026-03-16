@@ -312,6 +312,26 @@ export function useSession() {
     });
   }, []);
 
+  const leaveSession = useCallback(() => {
+    unsubscribesRef.current.forEach(unsub => unsub());
+    unsubscribesRef.current = [];
+    clearSavedSession();
+    setState({
+      session: null,
+      role: 'none',
+      playerId: '',
+      playerName: '',
+      preferredPath: 'Lead',
+      players: [],
+      firebaseConfigured: isFirebaseConfigured(),
+      error: null,
+      connecting: false,
+      queue: [],
+      nowPlaying: null,
+      history: [],
+    });
+  }, []);
+
   // Cleanup subscriptions on unmount
   useEffect(() => {
     return () => {
@@ -327,5 +347,6 @@ export function useSession() {
     subscribeToLibrarySync,
     startOfflineMode,
     updateProfile,
+    leaveSession,
   };
 }

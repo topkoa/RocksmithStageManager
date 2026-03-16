@@ -14,6 +14,7 @@ interface HeaderProps {
   playerName?: string;
   preferredPath?: string;
   onEditProfile?: () => void;
+  onLeaveSession?: () => void;
 }
 
 export function Header({
@@ -28,6 +29,7 @@ export function Header({
   playerName,
   preferredPath,
   onEditProfile,
+  onLeaveSession,
 }: HeaderProps) {
   return (
     <header className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
@@ -67,6 +69,11 @@ export function Header({
         {isHost && (
           <Button size="sm" onClick={onLoadFiles} disabled={loading}>
             {loading ? 'Loading...' : 'Load Songs'}
+          </Button>
+        )}
+        {onLeaveSession && (
+          <Button size="sm" variant="ghost" onClick={onLeaveSession} className="text-red-400">
+            Leave
           </Button>
         )}
       </div>

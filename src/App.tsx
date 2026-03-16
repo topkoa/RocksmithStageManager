@@ -204,6 +204,7 @@ function App() {
         playerName={session.playerName}
         preferredPath={session.preferredPath}
         onEditProfile={() => setEditProfileOpen(true)}
+        onLeaveSession={session.leaveSession}
       />
 
       {fileLoader.loading && (
